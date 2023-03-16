@@ -232,19 +232,44 @@ def body_pose_to_body_RTs(jangles, tpose_joints):
     """
 
     jangles = jangles.reshape(-1, 3)
+
+    pose_mode = 1 #'star' # ['T', 'star']
+    if pose_mode == 'T':
+        print("Actually using tpose")
+        jangles=np.zeros_like(jangles, dtype=jangles.dtype) ### to not apply any pose transform
+    elif pose_mode == 'star':
+        print("Actually using star pose")
+        # print("'jangles before :", jangles)
+        jangles=np.zeros_like(jangles, dtype=jangles.dtype) ### tpose
+        jangles[1,:] = np.array([0,0, np.pi*0.25]) # L hip
+        jangles[2,:] = np.array([0,0, -np.pi*0.25]) # R hip
+        # print("'jangles after :", jangles)
+
     total_joints = jangles.shape[0]
     assert tpose_joints.shape[0] == total_joints
 
     Rs = np.zeros(shape=[total_joints, 3, 3], dtype='float32')
     Rs[0] = _rvec_to_rmtx(jangles[0,:])
+    
 
     Ts = np.zeros(shape=[total_joints, 3], dtype='float32')
     Ts[0] = tpose_joints[0,:]
+
+    print_RTs = False
+    if print_RTs:
+        print("Rs and Ts before joint parenting:")
+        print("Rs:", Rs)
+        print("Ts:", Ts)
 
     for i in range(1, total_joints):
         Rs[i] = _rvec_to_rmtx(jangles[i,:])
         Ts[i] = tpose_joints[i,:] - tpose_joints[SMPL_PARENT[i], :]
     
+    if print_RTs:
+        print("Rs and Ts after joint parenting:")
+        print("Rs:", Rs)
+        print("Ts:", Ts)
+
     return Rs, Ts
 
 
